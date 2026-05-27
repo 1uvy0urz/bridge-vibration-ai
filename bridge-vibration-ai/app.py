@@ -17,6 +17,8 @@ from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from services.bridge_ai import analyze_bridge_vibration
+from services.demo_data import create_demo_dataframe, dataframe_to_csv_bytes
+from services.history import add_bridge, add_history_record, ensure_state
 
 
 st.set_page_config(
@@ -57,6 +59,14 @@ def inject_styles() -> None:
             50% {
                 opacity: 0.9;
                 transform: scaleX(1);
+            }
+        }
+        @keyframes waveMove {
+            from {
+                background-position: 0 0, 0 0;
+            }
+            to {
+                background-position: 760px 0, -520px 0;
             }
         }
         #MainMenu, footer, header {
@@ -129,6 +139,17 @@ def inject_styles() -> None:
             -webkit-backdrop-filter: blur(24px);
             margin-bottom: 34px;
         }
+        .hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.24;
+            background:
+                repeating-radial-gradient(ellipse at 20% 80%, transparent 0 32px, rgba(103, 232, 249, 0.38) 33px 34px, transparent 35px 70px),
+                repeating-radial-gradient(ellipse at 82% 20%, transparent 0 38px, rgba(196, 181, 253, 0.28) 39px 40px, transparent 41px 86px);
+            animation: waveMove 18s linear infinite;
+        }
         .hero::after {
             content: "";
             position: absolute;
@@ -150,6 +171,39 @@ def inject_styles() -> None:
             letter-spacing: 0.08em;
             text-transform: uppercase;
             margin-bottom: 18px;
+        }
+        .logo-strip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+        .brand-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            color: #e0f2fe;
+            font-weight: 820;
+            letter-spacing: 0.02em;
+        }
+        .logo-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            display: inline-grid;
+            place-items: center;
+            background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+            color: #020617;
+            box-shadow: 0 16px 50px rgba(34, 211, 238, 0.22);
+            font-weight: 900;
+        }
+        .award-tag {
+            border: 1px solid rgba(103, 232, 249, 0.26);
+            border-radius: 999px;
+            padding: 9px 14px;
+            color: #b8d7ef;
+            background: rgba(2, 6, 23, 0.26);
         }
         .hero-title {
             font-size: clamp(3.15rem, 6.2vw, 6.6rem);
@@ -175,6 +229,66 @@ def inject_styles() -> None:
             backdrop-filter: blur(22px);
             -webkit-backdrop-filter: blur(22px);
             margin: 18px 0 28px;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            margin: 18px 0 34px;
+        }
+        .feature-card, .flow-card, .footer-panel {
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.72), rgba(30, 41, 59, 0.36));
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: 0 20px 70px rgba(0, 0, 0, 0.24);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .feature-card h3, .flow-card h3 {
+            margin: 0 0 10px;
+            color: #f8fbff;
+            font-size: 1.05rem;
+        }
+        .feature-card p, .flow-card p, .footer-panel p {
+            margin: 0;
+            color: #aebfd3;
+            line-height: 1.75;
+        }
+        .flow-row {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 14px;
+            margin: 18px 0 34px;
+        }
+        .flow-step {
+            position: relative;
+            min-height: 132px;
+            border: 1px solid rgba(103, 232, 249, 0.20);
+            border-radius: 20px;
+            padding: 20px;
+            background: linear-gradient(145deg, rgba(8, 47, 73, 0.48), rgba(49, 46, 129, 0.24));
+        }
+        .flow-index {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: grid;
+            place-items: center;
+            color: #020617;
+            font-weight: 900;
+            background: linear-gradient(135deg, #67e8f9, #c4b5fd);
+            margin-bottom: 12px;
+        }
+        .flow-step strong {
+            display: block;
+            color: #f8fbff;
+            margin-bottom: 8px;
+        }
+        .flow-step span {
+            color: #aebfd3;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
         .metric-card {
             min-height: 132px;
@@ -332,6 +446,13 @@ def inject_styles() -> None:
             }
             .ai-grid, .meta-grid {
                 grid-template-columns: 1fr;
+            }
+            .feature-grid, .flow-row {
+                grid-template-columns: 1fr;
+            }
+            .logo-strip {
+                align-items: flex-start;
+                flex-direction: column;
             }
         }
         </style>
@@ -583,6 +704,88 @@ def show_metric_card(label: str, value: str) -> None:
         <div class="metric-card">
             <div class="metric-label">{label}</div>
             <div class="metric-value">{value}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_competition_home() -> None:
+    st.markdown(
+        """
+        <section class="hero">
+            <div class="logo-strip">
+                <div class="brand-logo">
+                    <span class="logo-mark">BI</span>
+                    <span>BridgeSense AI</span>
+                </div>
+                <div class="award-tag">大学生创新创业大赛 · 科研转化项目</div>
+            </div>
+            <div class="hero-kicker">LIGHTWEIGHT BRIDGE HEALTH MONITORING</div>
+            <p class="hero-title">基于智能手机传感器的桥梁轻量化监测系统</p>
+            <p class="hero-subtitle">
+                低成本、智能化、快速化农村桥梁健康监测平台。面向基层巡检场景，
+                通过手机加速度传感器、FFT 频谱分析和 AI 工程判读，实现桥梁振动状态快速筛查。
+            </p>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### 项目介绍")
+    st.markdown(
+        """
+        <div class="panel">
+            本系统聚焦农村桥梁数量多、分布散、专业检测成本高的问题，
+            将智能手机传感器采集、云端数据分析、AI 风险评估和 PDF 报告生成整合为轻量化平台。
+            平台适合创新创业展示、科研训练、基层巡检辅助和结构健康监测原型验证。
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### 技术亮点")
+    st.markdown(
+        """
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>低成本采集</h3>
+                <p>利用智能手机加速度传感器完成初步振动数据采集，降低传统硬件部署门槛。</p>
+            </div>
+            <div class="feature-card">
+                <h3>AI 工程判读</h3>
+                <p>基于真实 FFT 主频、幅值、采样率和样本量生成专业检测结论。</p>
+            </div>
+            <div class="feature-card">
+                <h3>报告闭环</h3>
+                <p>自动输出时域图、频域图、风险等级和建议措施，形成可下载 PDF 报告。</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("### AI检测流程图")
+    st.markdown(
+        """
+        <div class="flow-row">
+            <div class="flow-step"><div class="flow-index">1</div><strong>桥梁建档</strong><span>录入桥梁名称、类型、检测时间和检测人员。</span></div>
+            <div class="flow-step"><div class="flow-index">2</div><strong>数据采集</strong><span>上传手机传感器导出的 CSV / XLS / XLSX 文件。</span></div>
+            <div class="flow-step"><div class="flow-index">3</div><strong>频谱计算</strong><span>自动去均值、加窗并进行 FFT 频谱分析。</span></div>
+            <div class="flow-step"><div class="flow-index">4</div><strong>AI 评估</strong><span>识别主频、幅值特征和潜在风险等级。</span></div>
+            <div class="flow-step"><div class="flow-index">5</div><strong>报告导出</strong><span>生成工程检测风格 PDF 报告，便于归档与展示。</span></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_footer() -> None:
+    st.markdown(
+        """
+        <div class="footer-panel">
+            <p><strong>BridgeSense AI</strong> · 面向农村桥梁的轻量化智能监测平台</p>
+            <p>本系统用于科研展示、教学实践和初步筛查。正式工程鉴定需结合专业检测规范、现场工况和长期监测数据。</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -853,20 +1056,9 @@ def format_detection_time() -> str:
 
 def main() -> None:
     inject_styles()
-
-    st.markdown(
-        """
-        <section class="hero">
-            <div class="hero-kicker">STRUCTURAL SIGNAL INTELLIGENCE</div>
-            <p class="hero-title">桥梁振动检测 AI 网页系统</p>
-            <p class="hero-subtitle">
-                上传手机加速度传感器导出的 CSV、XLS 或 XLSX 文件，系统会自动读取数据、完成 FFT 频谱分析，
-                并输出桥梁振动主频结果。
-            </p>
-        </section>
-        """,
-        unsafe_allow_html=True,
-    )
+    ensure_state(st.session_state)
+    demo_df = create_demo_dataframe()
+    render_competition_home()
 
     st.sidebar.header("分析设置")
     sample_rate_input = st.sidebar.number_input(
@@ -882,12 +1074,19 @@ def main() -> None:
         value=True,
         help="适合包含 x/y/z 三轴加速度的手机传感器数据。",
     )
+    demo_mode = st.sidebar.toggle("一键演示模式", value=False, help="使用内置示例数据快速展示完整检测流程。")
 
+    st.markdown("## 检测工作台")
     st.subheader("桥梁信息")
     st.markdown('<div class="panel">', unsafe_allow_html=True)
+    add_bridge(st.session_state, "示例桥梁")
     info_col1, info_col2 = st.columns(2)
     with info_col1:
-        bridge_name = st.text_input("桥梁名称", value="示例桥梁")
+        bridge_name = st.selectbox("选择桥梁", st.session_state["bridges"])
+        new_bridge_name = st.text_input("新增桥梁名称", placeholder="例如：北河 2 号桥")
+        if st.button("添加到桥梁库", use_container_width=True):
+            add_bridge(st.session_state, new_bridge_name)
+            st.rerun()
         bridge_type = st.selectbox("桥梁类型", ["梁桥", "连续梁桥", "拱桥", "斜拉桥", "悬索桥", "其他"])
     with info_col2:
         detection_date = st.date_input("检测日期")
@@ -898,10 +1097,19 @@ def main() -> None:
 
     st.subheader("上传区")
     st.markdown('<div class="panel">', unsafe_allow_html=True)
+    st.download_button(
+        "下载示例数据",
+        data=dataframe_to_csv_bytes(demo_df),
+        file_name="bridge_demo_acceleration.csv",
+        mime="text/csv",
+        use_container_width=True,
+    )
     uploaded_file = st.file_uploader("上传 CSV / Excel 文件", type=["csv", "xls", "xlsx"])
+    if demo_mode:
+        st.success("一键演示模式已启用：系统将使用内置示例数据完成完整流程。")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if uploaded_file is None:
+    if uploaded_file is None and not demo_mode:
         st.info("请上传手机加速度传感器导出的 CSV 文件。常见列名如 time、timestamp、acc_x、acc_y、acc_z。")
         with st.expander("查看示例 CSV 格式"):
             st.code(
@@ -911,11 +1119,16 @@ def main() -> None:
 0.02,0.01,0.02,9.79""",
                 language="csv",
             )
+        render_footer()
         return
 
     try:
-        df = read_uploaded_file(uploaded_file)
-        st.success("文件读取成功。")
+        if demo_mode:
+            df = demo_df
+            st.success("示例数据已载入。")
+        else:
+            df = read_uploaded_file(uploaded_file)
+            st.success("文件读取成功。")
 
         st.subheader("数据预览")
         st.dataframe(df.head(20), use_container_width=True)
@@ -935,6 +1148,15 @@ def main() -> None:
                 point_count=len(data.acceleration),
                 bridge_type=bridge_type,
             )
+        add_history_record(
+            st.session_state,
+            bridge_name=bridge_name,
+            bridge_type=bridge_type,
+            dominant_frequency=dominant_frequency,
+            risk_level=analysis["risk_level"],
+            status=analysis["status"],
+            point_count=len(data.acceleration),
+        )
 
         st.subheader("结果区")
         col1, col2, col3, col4 = st.columns(4)
@@ -1004,6 +1226,15 @@ def main() -> None:
             st.write(
                 "系统会先对加速度数据去均值，然后使用汉宁窗降低频谱泄漏，再通过 FFT 查找非零频率中幅值最大的点作为主频。"
             )
+
+        st.subheader("数据历史记录")
+        st.markdown('<div class="panel">', unsafe_allow_html=True)
+        if st.session_state["history"]:
+            st.dataframe(pd.DataFrame(st.session_state["history"]), use_container_width=True, hide_index=True)
+        else:
+            st.caption("暂无历史记录。完成一次检测后会自动记录。")
+        st.markdown("</div>", unsafe_allow_html=True)
+        render_footer()
     except Exception as exc:
         st.error("CSV 格式或数据内容无法完成分析。")
         st.warning(str(exc))
@@ -1016,6 +1247,7 @@ def main() -> None:
             - 有效数据点是否不少于 8 个。
             """
         )
+        render_footer()
 
 
 if __name__ == "__main__":
