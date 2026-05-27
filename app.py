@@ -75,8 +75,11 @@ def inject_styles() -> None:
                 background-position: 760px 0, -520px 0;
             }
         }
-        #MainMenu, footer, header {
+        #MainMenu, footer {
             visibility: hidden;
+        }
+        header[data-testid="stHeader"] {
+            background: transparent;
         }
         .stDeployButton {
             display: none !important;
