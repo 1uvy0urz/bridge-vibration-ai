@@ -464,6 +464,250 @@ def inject_styles() -> None:
                 flex-direction: column;
             }
         }
+        /* ===== National innovation showcase visual system ===== */
+        @keyframes scanFlow {
+            0% { transform: translateX(-18%); opacity: 0; }
+            12% { opacity: 0.9; }
+            88% { opacity: 0.9; }
+            100% { transform: translateX(118%); opacity: 0; }
+        }
+        @keyframes statusPulse {
+            0%, 100% { box-shadow: 0 0 0 rgba(34, 211, 238, 0); }
+            50% { box-shadow: 0 0 28px rgba(34, 211, 238, 0.22); }
+        }
+        @keyframes softGlow {
+            0%, 100% { opacity: 0.62; }
+            50% { opacity: 1; }
+        }
+        .stApp {
+            background:
+                linear-gradient(120deg, rgba(4, 47, 73, 0.34), transparent 34%),
+                radial-gradient(circle at 14% 18%, rgba(34, 211, 238, 0.16), transparent 26%),
+                radial-gradient(circle at 78% 10%, rgba(59, 130, 246, 0.18), transparent 28%),
+                radial-gradient(circle at 70% 88%, rgba(20, 184, 166, 0.10), transparent 32%),
+                linear-gradient(145deg, #020617 0%, #07111f 46%, #030816 100%);
+        }
+        .stApp::before {
+            background-image:
+                linear-gradient(rgba(125, 211, 252, 0.07) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(125, 211, 252, 0.055) 1px, transparent 1px),
+                linear-gradient(135deg, rgba(34, 211, 238, 0.035) 25%, transparent 25%, transparent 50%, rgba(34, 211, 238, 0.035) 50%, rgba(34, 211, 238, 0.035) 75%, transparent 75%);
+            background-size: 64px 64px, 64px 64px, 96px 96px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,0.86), rgba(0,0,0,0.30) 72%, transparent);
+        }
+        .block-container {
+            max-width: 1460px;
+            padding-top: 2.6rem;
+        }
+        h2 {
+            position: relative;
+            margin-top: 2.1rem;
+            font-weight: 860;
+        }
+        h2::after {
+            content: "";
+            display: block;
+            width: 86px;
+            height: 3px;
+            margin-top: 10px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #22d3ee, #60a5fa, transparent);
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.35);
+        }
+        .hero,
+        .panel,
+        .feature-card,
+        .flow-step,
+        .ai-card,
+        .metric-card,
+        .footer-panel,
+        div[data-testid="stVerticalBlock"] > div:has(> .stPlotlyChart),
+        div[data-testid="stDataFrame"] {
+            border: 1px solid transparent;
+            background:
+                linear-gradient(145deg, rgba(8, 18, 35, 0.88), rgba(7, 24, 41, 0.62)) padding-box,
+                linear-gradient(135deg, rgba(103, 232, 249, 0.48), rgba(59, 130, 246, 0.12), rgba(20, 184, 166, 0.30)) border-box;
+            box-shadow:
+                0 24px 90px rgba(0, 0, 0, 0.34),
+                inset 0 1px 0 rgba(255, 255, 255, 0.07);
+        }
+        .hero {
+            min-height: 430px;
+            padding: 58px 64px;
+            border-radius: 30px;
+        }
+        .hero::before {
+            opacity: 0.34;
+            background:
+                repeating-linear-gradient(90deg, transparent 0 42px, rgba(34, 211, 238, 0.10) 43px, transparent 44px),
+                repeating-radial-gradient(ellipse at 78% 28%, transparent 0 34px, rgba(96, 165, 250, 0.20) 35px 36px, transparent 37px 78px),
+                linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.16), transparent);
+            animation: waveMove 24s linear infinite;
+        }
+        .hero::after {
+            left: 72px;
+            right: 72px;
+            bottom: 34px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #22d3ee 16%, #60a5fa 54%, #14b8a6 78%, transparent);
+        }
+        .hero-title {
+            max-width: 980px;
+            font-size: clamp(2.8rem, 5.2vw, 5.9rem);
+            line-height: 1.02;
+            letter-spacing: 0;
+        }
+        .hero-subtitle {
+            max-width: 980px;
+            color: #c7d9ea;
+            font-size: 1.16rem;
+        }
+        .logo-mark {
+            border-radius: 16px;
+            background: linear-gradient(135deg, #67e8f9, #60a5fa 52%, #14b8a6);
+        }
+        .award-tag,
+        .hero-kicker {
+            border: 1px solid rgba(125, 211, 252, 0.26);
+            background: rgba(2, 6, 23, 0.28);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+        .hero-kicker {
+            width: fit-content;
+            padding: 8px 12px;
+            border-radius: 999px;
+        }
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: 1.25fr repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            margin: 24px 0 38px;
+        }
+        .monitor-card {
+            position: relative;
+            overflow: hidden;
+            min-height: 124px;
+            border: 1px solid transparent;
+            border-radius: 22px;
+            padding: 22px;
+            background:
+                linear-gradient(145deg, rgba(8, 20, 36, 0.86), rgba(7, 35, 53, 0.56)) padding-box,
+                linear-gradient(135deg, rgba(34, 211, 238, 0.52), rgba(96, 165, 250, 0.16), rgba(20, 184, 166, 0.28)) border-box;
+            box-shadow: 0 20px 70px rgba(0, 0, 0, 0.28);
+        }
+        .monitor-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 38%;
+            background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.12), transparent);
+            animation: scanFlow 5.2s ease-in-out infinite;
+        }
+        .monitor-label {
+            color: #8fb5ca;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .monitor-value {
+            color: #f8fbff;
+            font-size: 1.55rem;
+            font-weight: 860;
+            margin-top: 10px;
+        }
+        .monitor-desc {
+            color: #9fb6c9;
+            font-size: 0.92rem;
+            margin-top: 8px;
+        }
+        .status-bar {
+            position: relative;
+            height: 10px;
+            border-radius: 999px;
+            margin-top: 18px;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.74);
+            border: 1px solid rgba(125, 211, 252, 0.16);
+        }
+        .status-bar span {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: var(--level);
+            border-radius: inherit;
+            background: linear-gradient(90deg, #14b8a6, #22d3ee, #60a5fa);
+            animation: statusPulse 3.4s ease-in-out infinite;
+        }
+        .data-stream {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            margin-top: 18px;
+        }
+        .data-stream i {
+            height: 34px;
+            border-radius: 8px;
+            background: linear-gradient(180deg, rgba(34, 211, 238, 0.34), rgba(96, 165, 250, 0.05));
+            transform-origin: bottom;
+            animation: softGlow 2.4s ease-in-out infinite;
+        }
+        .data-stream i:nth-child(2n) { height: 48px; animation-delay: 0.2s; }
+        .data-stream i:nth-child(3n) { height: 26px; animation-delay: 0.45s; }
+        .data-stream i:nth-child(5n) { height: 58px; animation-delay: 0.7s; }
+        .feature-card,
+        .flow-step,
+        .metric-card,
+        .ai-card {
+            transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+        }
+        .feature-card:hover,
+        .flow-step:hover,
+        .metric-card:hover,
+        .ai-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 28px 90px rgba(14, 165, 233, 0.16);
+        }
+        .flow-step::after {
+            content: "";
+            position: absolute;
+            left: 20px;
+            right: 20px;
+            bottom: 16px;
+            height: 2px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #22d3ee, transparent);
+            opacity: 0.55;
+        }
+        [data-testid="stSidebar"] {
+            background:
+                linear-gradient(180deg, rgba(2, 8, 18, 0.94), rgba(4, 16, 30, 0.86)),
+                rgba(2, 6, 23, 0.86);
+            border-right: 1px solid rgba(125, 211, 252, 0.18);
+        }
+        div[data-testid="stFileUploader"] {
+            background:
+                linear-gradient(145deg, rgba(8, 20, 36, 0.72), rgba(7, 35, 53, 0.42)) padding-box,
+                linear-gradient(135deg, rgba(34, 211, 238, 0.42), rgba(96, 165, 250, 0.14), rgba(20, 184, 166, 0.30)) border-box;
+            border: 1px dashed transparent;
+        }
+        .stButton button,
+        .stDownloadButton button,
+        button {
+            background: linear-gradient(135deg, rgba(34, 211, 238, 0.18), rgba(96, 165, 250, 0.12)) !important;
+            border: 1px solid rgba(125, 211, 252, 0.28) !important;
+            color: #e0f2fe !important;
+            box-shadow: 0 12px 32px rgba(14, 165, 233, 0.10);
+        }
+        @media (max-width: 960px) {
+            .monitor-grid {
+                grid-template-columns: 1fr;
+            }
+            .hero {
+                min-height: auto;
+                padding: 34px 24px 46px;
+            }
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -801,6 +1045,42 @@ def render_footer() -> None:
     )
 
 
+def render_monitoring_center() -> None:
+    st.markdown(
+        """
+        <div class="monitor-grid">
+            <div class="monitor-card">
+                <div class="monitor-label">DIGITAL BRIDGE COMMAND CENTER</div>
+                <div class="monitor-value">桥梁数字化监测中心</div>
+                <div class="monitor-desc">面向基层桥梁巡检、轻量化采集、智能评估与报告归档的一体化平台。</div>
+                <div class="data-stream">
+                    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+            </div>
+            <div class="monitor-card">
+                <div class="monitor-label">SENSING ACCESS</div>
+                <div class="monitor-value">手机传感器接入</div>
+                <div class="monitor-desc">支持 CSV / XLS / XLSX 加速度数据。</div>
+                <div class="status-bar" style="--level: 86%;"><span></span></div>
+            </div>
+            <div class="monitor-card">
+                <div class="monitor-label">AI RISK ENGINE</div>
+                <div class="monitor-value">频谱智能评估</div>
+                <div class="monitor-desc">FFT、Welch、质量评分与历史基线对比。</div>
+                <div class="status-bar" style="--level: 78%;"><span></span></div>
+            </div>
+            <div class="monitor-card">
+                <div class="monitor-label">GOVERNANCE LOOP</div>
+                <div class="monitor-value">检测报告闭环</div>
+                <div class="monitor-desc">自动生成工程化 PDF 检测报告。</div>
+                <div class="status-bar" style="--level: 92%;"><span></span></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_ai_analysis(
     bridge_name: str,
     bridge_type: str,
@@ -1068,6 +1348,7 @@ def main() -> None:
     ensure_state(st.session_state)
     demo_df = create_demo_dataframe()
     render_competition_home()
+    render_monitoring_center()
 
     st.sidebar.header("分析设置")
     sample_rate_input = st.sidebar.number_input(
