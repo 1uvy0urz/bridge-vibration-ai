@@ -19,6 +19,12 @@ from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, S
 from services.bridge_ai import analyze_bridge_vibration
 from services.demo_data import create_demo_dataframe, dataframe_to_csv_bytes
 from services.history import add_bridge, add_history_record, ensure_state
+from services.signal_processing import (
+    bandpass_filter,
+    calculate_welch_spectrum,
+    compare_with_baseline,
+    evaluate_signal_quality,
+)
 
 
 st.set_page_config(
@@ -69,8 +75,11 @@ def inject_styles() -> None:
                 background-position: 760px 0, -520px 0;
             }
         }
-        #MainMenu, footer, header {
+        #MainMenu, footer {
             visibility: hidden;
+        }
+        header[data-testid="stHeader"] {
+            background: transparent;
         }
         .stDeployButton {
             display: none !important;
@@ -1074,6 +1083,8 @@ def main() -> None:
         value=True,
         help="适合包含 x/y/z 三轴加速度的手机传感器数据。",
     )
+    use_filter = st.sidebar.checkbox("启用带通滤波", value=True, help="默认保留 0.2-20Hz 桥梁常见振动频段。")
+    use_welch = st.sidebar.checkbox("启用 Welch 稳健频谱", value=True, help="多段平均频谱，可降低随机噪声影响。")
     demo_mode = st.sidebar.toggle("一键演示模式", value=False, help="使用内置示例数据快速展示完整检测流程。")
 
     st.markdown("## 检测工作台")
@@ -1140,12 +1151,42 @@ def main() -> None:
 
         with st.spinner("AI分析中..."):
             data = build_acceleration_data(df, selected_column, sample_rate_input, use_magnitude)
-            freqs, amplitude, dominant_frequency, dominant_amplitude = calculate_fft(data)
+            processed_acceleration = (
+                bandpass_filter(data.acceleration, data.sample_rate)
+                if use_filter
+                else data.acceleration
+            )
+            processed_data = AccelerationData(
+                time=data.time,
+                acceleration=processed_acceleration,
+                sample_rate=data.sample_rate,
+                source_column=data.source_column,
+            )
+            if use_welch:
+                freqs, amplitude, dominant_frequency, dominant_amplitude = calculate_welch_spectrum(
+                    processed_data.acceleration,
+                    processed_data.sample_rate,
+                )
+                spectrum_method = "Welch稳健频谱"
+            else:
+                freqs, amplitude, dominant_frequency, dominant_amplitude = calculate_fft(processed_data)
+                spectrum_method = "FFT频谱"
+            signal_quality = evaluate_signal_quality(
+                acceleration=processed_data.acceleration,
+                sample_rate=processed_data.sample_rate,
+                dominant_amplitude=dominant_amplitude,
+                spectrum_amplitude=amplitude,
+            )
+            baseline_result = compare_with_baseline(
+                st.session_state["history"],
+                bridge_name=bridge_name,
+                current_frequency=dominant_frequency,
+            )
             analysis = classify_risk(
                 dominant_frequency=dominant_frequency,
                 dominant_amplitude=dominant_amplitude,
-                sample_rate=data.sample_rate,
-                point_count=len(data.acceleration),
+                sample_rate=processed_data.sample_rate,
+                point_count=len(processed_data.acceleration),
                 bridge_type=bridge_type,
             )
         add_history_record(
@@ -1155,21 +1196,27 @@ def main() -> None:
             dominant_frequency=dominant_frequency,
             risk_level=analysis["risk_level"],
             status=analysis["status"],
-            point_count=len(data.acceleration),
+            point_count=len(processed_data.acceleration),
         )
 
         st.subheader("结果区")
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             show_metric_card("主频", f"{dominant_frequency:.3f} Hz")
         with col2:
             show_metric_card("主频幅值", f"{dominant_amplitude:.4f}")
         with col3:
-            show_metric_card("采样率", f"{data.sample_rate:.2f} Hz")
+            show_metric_card("采样率", f"{processed_data.sample_rate:.2f} Hz")
         with col4:
-            show_metric_card("有效点数", f"{len(data.acceleration)}")
+            show_metric_card("有效点数", f"{len(processed_data.acceleration)}")
+        with col5:
+            show_metric_card("质量评分", f"{signal_quality['score']}/100")
 
-        st.markdown(f'<p class="hint">当前分析数据源：{data.source_column}</p>', unsafe_allow_html=True)
+        st.markdown(
+            f'<p class="hint">当前分析数据源：{processed_data.source_column}；分析方法：{spectrum_method}；'
+            f'数据质量：{signal_quality["level"]}（{signal_quality["notes"]}）；历史对比：{baseline_result["message"]}</p>',
+            unsafe_allow_html=True,
+        )
 
         st.subheader("AI分析结果")
         render_ai_analysis(
@@ -1195,7 +1242,7 @@ def main() -> None:
                     bridge_type=bridge_type,
                     detection_time_text=detection_time_text,
                     inspector=inspector,
-                    data=data,
+                    data=processed_data,
                     freqs=freqs,
                     amplitude=amplitude,
                     dominant_frequency=dominant_frequency,
@@ -1218,7 +1265,7 @@ def main() -> None:
         st.subheader("图表区")
         chart_col1, chart_col2 = st.columns(2)
         with chart_col1:
-            st.plotly_chart(make_time_chart(data), use_container_width=True)
+            st.plotly_chart(make_time_chart(processed_data), use_container_width=True)
         with chart_col2:
             st.plotly_chart(make_frequency_chart(freqs, amplitude, dominant_frequency), use_container_width=True)
 
